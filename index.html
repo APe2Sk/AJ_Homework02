@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Movie renting app</h1>
+    
+    <label for="input">Please enter a movie that you want to rent.</label>
+    <br>
+    <input type="text" name="input" id="input" placeholder="Enter movie name">
+    <button>Search</button>
+    <br>
+    <hr>
+
+    <!-- Reminder app -->
+    <h1>Reminder app</h1>
+
+    <label for="title">Reminder title:</label>
+    <input type="text" name="title" id="title" placeholder="Reminder title">
+    <br>
+    <label for="priority">Priority:</label>
+    <select name="priority" id="priority">
+        <option value="High">High</option>
+        <option value="Medium">Medium</option>
+        <option value="Low" selected>Low</option>
+    </select>
+    <br>
+    <label for="color">Color:</label>
+    <select name="color" id="color">
+        <option value="red">Red</option>
+        <option value="yellow">Yellow</option>
+        <option value="green" selected>Green</option>
+    </select>
+    <br>
+    <textarea name="description" id="description" cols="30" rows="10" placeholder="Write the description for the reminder"></textarea>
+    <br>
+    <button id="add">Add reminder</button>
+    <br>
+    <button id="showReminders">Show all reminders</button>
+    <br>
+    <button id="hide">Hide table</button>
+
+
+    <script src="index.js"></script>
+</body>
+</html>
