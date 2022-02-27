@@ -9,10 +9,15 @@ let hourlyData = document.getElementById("hourlyData");
 
 // povik
 async function getData(city) {
-    let result = 
-    await fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&APPID=d1641207363eaff198d8e386f23960c8`);
-    let data = await result.json();
-    return data;
+    try {
+        let result = 
+        await fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&APPID=d1641207363eaff198d8e386f23960c8`);
+        let data = await result.json();
+        return data;
+    }
+    catch (e) {
+        document.getElementById("errorMessage").innerHTML = e.message;
+    }
 
 }
 
@@ -20,46 +25,77 @@ async function getData(city) {
 // Switch na strana Statitistic
 hourlyData.style.display = "none";
 statisticData.style.display = "none";
+statisticButtom.style.display = "none";
+hourlyButtom.style.display = "none";
 
+// document.getElementById("homeIdImg").addEventListener("click", function(){
+//     document.getElementById("cityName").style.display = "none";
+//     console.log()
+// })
 
-statisticButtom.addEventListener("click", function() {
-    hourlyData.style.display = "none";
-    statisticData.style.display = "flex";
-    statisticData.style.justifyContent = "center";
-
-})
-
-// Switch na strana Hourly
-hourlyButtom.addEventListener("click", function() {
+function showHourylyData() {
     statisticData.style.display = "none";
-    hourlyData.style.display = "flex";
+    hourlyData.style.display = "flex"; 
     hourlyData.style.justifyContent = "center";
-})
+    document.getElementsByClassName("card")[0].style.display = "none";
+    document.getElementsByClassName("card")[1].style.display = "none";
+    document.getElementsByClassName("card")[2].style.display = "none";
+    document.getElementById("cityName").style.display = "flex";
+
+}
+
+async function statAndHourly(r) {
+    let res = await r;
+    if (res.message != "city not found") {
+        statisticButtom.addEventListener("click", function() {
+            hourlyData.style.display = "none";
+            statisticData.style.display = "flex";
+            statisticData.style.justifyContent = "center";
+            document.getElementsByClassName("card")[0].style.display = "none";
+            document.getElementsByClassName("card")[1].style.display = "none";
+            document.getElementsByClassName("card")[2].style.display = "none";
+            document.getElementById("cityName").style.display = "flex";
+        })
+
+        // Switch na strana Hourly
+        hourlyButtom.addEventListener("click", function() {
+            showHourylyData();
+
+        })
+    }
+}
 
 
 // Zimanje na podatoci so KOPCE
 searchButtom.addEventListener("click", async function() {
-    if (searchInput.value.length < 1) {
-        alert("You did not entered any city");
-        return;
-    }
     console.log(searchInput.value);
     let response = null;
 
-    try {
-        response = await getData(searchInput.value);
+    response = await getData(searchInput.value);
+    if (searchInput.value.length < 1 || response.message == "city not found") {
+        document.getElementById("errorMessage").innerHTML = "You did not entered a valid city";
+        return;
     }
-    catch (error) {
-        console.log(error);
-    }
+
+    document.getElementById("errorMessage").style.display = "none";
+    statAndHourly(response);
 
     searchInput.value = "";
     
     console.log(response);
     let responseData = await extractData(response);
+    console.log(responseData);
+
     printstatistics(responseData);
-    printHourly(responseData);
-    // i tuka pustame funkcii
+    createTable(responseData);
+    showHourylyData();
+
+    console.log(response.city.name);
+    document.getElementById("cityName").textContent = `Weather data for ${response.city.name}`;
+
+    statisticButtom.style.display = "inline-block";
+    hourlyButtom.style.display = "inline-block";
+
 })
 
 // Zimanje podatoci so ENTER
@@ -92,10 +128,24 @@ async function extractData(dataFromCall) {
 
     dataForUsage.temperature_Calc = await temperatureCalculations(dataForUsage);
     dataForUsage.humidity_Calc = await humidityCalculations(dataForUsage);
+    let iconCode = weatherData.map(ic => ic.weather[0]).map(code => code.icon);
 
+    dataForUsage.image = await getIcon(iconCode);
+    // console.log(dataForUsage.image);
     return dataForUsage;
 }
 
+async function getIcon(codes) {
+    let images=[];
+    for(let i = 0; i < codes.length; i++){
+        let codeCalls = await fetch (`http://openweathermap.org/img/w/${codes[i]}.png`);
+        images.push(codeCalls.url);
+    }
+    // console.log(images)
+    return images;
+}
+
+// Vadenje na podatoci za temperatura i se pusta na ExtractData funkcijata
 async function temperatureCalculations(object) {
     let temperatureInfo = {};
     
@@ -125,6 +175,7 @@ async function temperatureCalculations(object) {
     return temperatureInfo;
 }
 
+// Vadenje na podatoci za jumidity i se pusta na ExtractData funkcijata
 async function humidityCalculations(object) {
     let humidityInfo = {};
     
@@ -148,14 +199,18 @@ async function humidityCalculations(object) {
 
 async function printstatistics(data) {
 
+    document.getElementById("averageTempInfo").innerHTML = "";
+    document.getElementById("averageHumidInfo").innerHTML = "";
+
     // Temperature
     let hourlyReceivedData = await data;
     let maxTemp = hourlyReceivedData.temperature_Calc.maxTemperatureOfAllDays;
     let minTemp = hourlyReceivedData.temperature_Calc.minTemperatureOfAllDays;
     let averageTemp = hourlyReceivedData.temperature_Calc.averageTempRounded;
-    console.log(hourlyReceivedData);
+    // console.log(hourlyReceivedData);
 
     let ul = document.createElement("ul");
+    ul.setAttribute("class", "removeElement");
     let liMax = document.createElement("li");
     let liAve = document.createElement("li");
     let liMin = document.createElement("li");
@@ -176,6 +231,7 @@ async function printstatistics(data) {
     let minHumid = hourlyReceivedData.humidity_Calc.minHumidityOfAllDays;
 
     let ulH = document.createElement("ul");
+    ulH.setAttribute("class", "removeElement");
     let liMaxH = document.createElement("li");
     let liAveH = document.createElement("li");
     let liMinH = document.createElement("li");
@@ -201,88 +257,174 @@ async function printstatistics(data) {
     document.getElementById("averageTempInfo").appendChild(p_warmestDay);
 
     p_coldestDay.textContent = `The coldest time in the following 5 days will be: ${dayColdestPrint}`;
+    p_coldestDay.setAttribute("class", "removeElement");
     p_warmestDay.textContent = `The warmest time in the following 5 days will be: ${dayWarmestPrint}`;
+    p_warmestDay.setAttribute("class", "removeElement");
 
-    console.log(dayColdestPrint, dayWarmestPrint);
+    // console.log(dayColdestPrint, dayWarmestPrint);
 }
 
+function createTable(data) {
+    let weatherData = data;
+    let weatherTable = document.getElementById("weatherTable");
+    if(weatherTable == null){
+        weatherTable = document.createElement("table");
+        weatherTable.setAttribute("id", "weatherTable");
+        weatherTable.setAttribute("class", "table table-bordered table-hover");
+        document.getElementById("tableDiv").appendChild(weatherTable);
+    }
+    else {
+        // console.log(weatherTable);
+        weatherTable.innerHTML = "";
+    }
+    
+    // console.log(weatherTable);
+    let thNamesScreen = ["", "Weather description", "Time measured", "Max temperature (℃)", "Min temperature (℃)", "Humidity (%)", "Wind (m/s)"];
+    let thNames = ["image", "weatherDescription", "timeMeasured", "temperatureMax", "temperatureMin", "humidity", "windSpeed"];
 
-async function printHourly(data) {
-    let statisticsReceivedData = await data;
-    let dataTable = [];
+    createHead(weatherTable, thNamesScreen);
 
-    //create table
-    let table = document.createElement("table");
-    document.getElementById("hourlyData").appendChild(table);
+    createBody(weatherTable, weatherData, thNames);
+
+}
+
+function createHead(table, tableColumns) {
+
     let thead = document.createElement("thead");
     table.appendChild(thead);
-    let th1 = document.createElement("th");
-    let th2 = document.createElement("th");
-    let th3 = document.createElement("th");
-    let th4 = document.createElement("th");
-    let th5 = document.createElement("th");
-    let th6 = document.createElement("th");
+    thead.setAttribute("class", "thead-dark")
+    tableColumns.forEach(name => {
+        let th = document.createElement("th");
+        th.setAttribute("scope", "col")
+        th.textContent = name;
+        thead.appendChild(th);
+    })
+}
 
-    thead.appendChild(th1);
-    thead.appendChild(th2);
-    thead.appendChild(th3);
-    thead.appendChild(th4);
-    thead.appendChild(th5);
-    thead.appendChild(th6);
-
-    th1.textContent = "Weather";
-    th2.textContent = "Description of the weather";
-    th3.textContent = "Date and time of the measurements";
-    th4.textContent = "Temperature (℃)";
-    th5.textContent = "Humidity (%)";
-    th6.textContent = "Wind Speed (m/s)";
-
+function createBody(table, data, dataColumns) {
     let tbody = document.createElement("tbody");
     table.appendChild(tbody);
 
-    let description = statisticsReceivedData.weatherDescription;
-    dataTable.push(description);
-    let dateAndTime = statisticsReceivedData.timeMeasured;
-    dataTable.push(dateAndTime);
-    let temperatureMax = statisticsReceivedData.temperatureMax;
-    dataTable.push(temperatureMax);    
-    let temperatureMin = statisticsReceivedData.temperatureMin;
-    dataTable.push(temperatureMin);    
-    let humidity = statisticsReceivedData.humidity;
-    dataTable.push(humidity);    
-    let windSpeed = statisticsReceivedData.windSpeed;
-    dataTable.push(windSpeed);    
+    // console.log(dataToPrint["timeMeasured"][0]);
 
-    for (let i = 0; i < 40; i++) {
+    for(let i = 0; i < data.weatherDescription.length; i++) {
         let tr = document.createElement("tr");
         tbody.appendChild(tr);
+        tr.setAttribute("class", "bg-white");
 
-        let td1 = document.createElement("td");
-        tr.appendChild(td1);
-        let td2 = document.createElement("td");
-        tr.appendChild(td2);
-        let td3 = document.createElement("td");
-        tr.appendChild(td3);
-        let td4 = document.createElement("td");
-        tr.appendChild(td4);
-        let td5 = document.createElement("td");
-        tr.appendChild(td5);
-        let td6 = document.createElement("td");
-        tr.appendChild(td6);
-
-        td1.textContent = ``;
-        td2.textContent = `${description[i]}`;
-        td3.textContent = `${dateAndTime[i]}`;
-        td4.textContent = `${temperatureMax[i]} ℃ (${temperatureMin[i]} ℃)`;
-        td5.textContent = `${humidity[i]} %`;
-        td6.textContent = `${windSpeed[i]} m/s`;
+        dataColumns.forEach(y => {
+            // y.forEach(s)
+            if (y == 'image') {
+                let td = document.createElement("td");
+                tr.appendChild(td);
+                // td.setAttribute("class", "bg-white");
+                let img = document.createElement("img");
+                td.appendChild(img);
+                // console.log(data[y]);
+                // console.log(data[y][0]);
+                img.setAttribute('src', data[y][i]);
+            } else {
+                let td = document.createElement("td");
+                tr.appendChild(td);
+                td.textContent = data[y][i];
+            }
+        })
     }
-
-
-
-    console.log(dataTable);
-
-
-    console.log(statisticsReceivedData);
-
 }
+
+// manipulation with cards
+document.getElementsByClassName("home")[0].addEventListener("click", function () {
+    document.getElementsByClassName("card")[0].style.display = "flex";
+    document.getElementsByClassName("card")[1].style.display = "flex";
+    document.getElementsByClassName("card")[2].style.display = "flex";
+    hourlyData.style.display = "none";
+    statisticData.style.display = "none";
+    document.getElementById("cityName").style.display = "none";
+})
+document.getElementById("homeID").addEventListener("click", function () {
+    document.getElementsByClassName("card")[0].style.display = "flex";
+    document.getElementsByClassName("card")[1].style.display = "flex";
+    document.getElementsByClassName("card")[2].style.display = "flex";
+    hourlyData.style.display = "none";
+    statisticData.style.display = "none";
+    document.getElementById("cityName").style.display = "none";
+
+})
+
+// putting img on cards
+document.getElementById("searchSkopje").addEventListener("click", async function() {
+    response = await getData("skopje");
+    statAndHourly(response);
+    let responseData = await extractData(response);
+    printstatistics(responseData);
+    createTable(responseData);
+    showHourylyData();
+    document.getElementById("cityName").textContent = `Weather data for ${response.city.name}`;
+    statisticButtom.style.display = "inline-block";
+    hourlyButtom.style.display = "inline-block";
+})
+document.getElementById("searchThessaloniki").addEventListener("click", async function() {
+    response = await getData("Thessaloniki");
+    statAndHourly(response);
+    let responseData = await extractData(response);
+    printstatistics(responseData);
+    createTable(responseData);
+    showHourylyData();
+    document.getElementById("cityName").textContent = `Weather data for ${response.city.name}`;
+    statisticButtom.style.display = "inline-block";
+    hourlyButtom.style.display = "inline-block";
+})
+document.getElementById("searchSofia").addEventListener("click", async function() {
+    response = await getData("Sofia");
+    statAndHourly(response);
+    let responseData = await extractData(response);
+    printstatistics(responseData);
+    createTable(responseData);
+    showHourylyData();
+    document.getElementById("cityName").textContent = `Weather data for ${response.city.name}`;
+    statisticButtom.style.display = "inline-block";
+    hourlyButtom.style.display = "inline-block";
+
+})
+
+
+// async function threeCities(oneOfThree) {
+//     response = await getData(oneOfThree);
+//     statAndHourly(response);
+//     let responseData = await extractData(response);
+//     printstatistics(responseData);
+//     createTable(responseData);
+//     showHourylyData();
+//     document.getElementById("cityName").textContent = `Weather data for ${response.city.name}`;
+//     statisticButtom.style.display = "inline-block";
+//     hourlyButtom.style.display = "inline-block";
+// }
+
+// document.getElementById("searchSofia").addEventListener("click", async function() {
+//     if(homeCities === "Skopje") {
+//         threeCities("Skopje")
+//     } else if(homeCities === "Thessaloniki") {
+//         threeCities("Thessaloniki");
+//     } else if(homeCities === "Sofia") {
+//         threeCities("Sofia");
+//     }
+// })
+
+
+//putting cards images
+let cities = ['Skopje', 'Thessaloniki', 'Sofia'];
+let idCity = ["imgSkopje", 'imgThessaloniki', 'imgSofia'];
+let idStepen = ["stepenSK", "stepenTH", "stepenSO"];
+
+async function iconsOnCities(citityArr, idGrad, idC) {
+    for (let i = 0; i < citityArr.length; i++) {
+
+
+    response = await getData(citityArr[i]);
+    let responseData = await extractData(response);
+    document.getElementById(idGrad[i]).setAttribute("src", responseData.image[0]);
+    document.getElementById(idStepen[i]).textContent = `${responseData.temperatureMax[0]} ℃`;
+
+    }
+}
+iconsOnCities(cities, idCity, idStepen);
