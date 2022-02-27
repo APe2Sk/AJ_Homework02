@@ -60,3 +60,33 @@
 table, thead, th, tbody, tr {
     border: 1px solid black;
 }
+
+tr:hover {
+    box-shadow: 2px 2px 7px 2px gray;
+    border-radius: 3px;
+}
+
+#info {
+    position: absolute;
+    top: 25%;
+}
+
+#tableDiv {
+    display: flex;
+    justify-content: center;
+    position: absolute;
+    top: 26%;
+}
+
+#footer {
+    display: flex;
+    justify-content: center;
+    position: fixed;
+    bottom: 5%;
+    font-size: xx-small;
+}
+
+#info {
+    display: flex;
+    justify-content: space-between;
+}
